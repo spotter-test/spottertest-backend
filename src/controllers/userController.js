@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const User = require('../models/user');
 const { createSendToken } = require('../utils/jwt');
 const { signupValidator, loginValidator } = require('../validators/authValidator');
+const bcrypt = require('bcryptjs')
 
 export const signup = async (req, res, next) => {
   try {
@@ -68,7 +69,7 @@ export const login = async (req, res, next) => {
       });
     }
 
-    const match = await bcrypt.compare(candidatePassword, userPassword);
+    const match = await bcrypt.compare(password,user.password);
     if(match){
         // 4) Generate token and send response
         createSendToken(user, 200, res);
@@ -88,12 +89,11 @@ export const login = async (req, res, next) => {
 export const getUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
+    const { password, ...userData } = user;
     
     res.status(200).json({
       status: 'success',
-      data: {
-        user
-      }
+      data: { user: userData }
     });
   } catch (error) {
     next(error);
@@ -103,38 +103,11 @@ export const getUser = async (req, res, next) => {
 
 export const updateProfile = async (req, res, next) => {
   try {
-    const { firstName, lastName, username, email } = req.body;
-    
-    // Check if username or email already exists (excluding current user)
-    if (username) {
-      const existingUser = await User.findOne({
-        username,
-        _id: { $ne: req.user.id }
-      });
-      if (existingUser) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Username already taken'
-        });
-      }
-    }
-
-    if (email) {
-      const existingUser = await User.findOne({
-        email,
-        _id: { $ne: req.user.id }
-      });
-      if (existingUser) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Email already taken'
-        });
-      }
-    }
+    const { firstName, lastName, email } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
-      { firstName, lastName, username, email },
+      { firstName, lastName, email },
       { new: true, runValidators: true }
     );
 
@@ -157,13 +130,7 @@ export const changePassword = async (req, res, next) => {
     // 1) Get user from collection
     const user = await User.findById(req.user.id).select('+password');
 
-    // 2) Check if current password is correct
-    if (!(await user.correctPassword(currentPassword, user.password))) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Your current password is wrong'
-      });
-    }
+    const match = await bcrypt.compare(newPassword,user.password)
 
     // 3) Update password
     user.password = newPassword;
