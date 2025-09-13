@@ -1,10 +1,9 @@
 const { validationResult } = require('express-validator');
 const User = require('../models/user');
 const { createSendToken } = require('../utils/jwt');
-const { signupValidator, loginValidator } = require('../validators/authValidator');
 const bcrypt = require('bcryptjs')
 
-export const signup = async (req, res, next) => {
+const signup = async (req, res, next) => {
   try {
    
     const errors = validationResult(req);
@@ -30,7 +29,6 @@ export const signup = async (req, res, next) => {
     }
 
     const newUser = await User.create({
-      username,
       email,
       password,
       firstName,
@@ -45,7 +43,7 @@ export const signup = async (req, res, next) => {
 };
 
 
-export const login = async (req, res, next) => {
+const login = async (req, res, next) => {
   try {
     // 1) Check for validation errors
     const errors = validationResult(req);
@@ -86,7 +84,7 @@ export const login = async (req, res, next) => {
   }
 };
 
-export const getUser = async (req, res, next) => {
+const getUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     const { password, ...userData } = user;
@@ -101,14 +99,14 @@ export const getUser = async (req, res, next) => {
 };
 
 
-export const updateProfile = async (req, res, next) => {
+const updateProfile = async (req, res, next) => {
   try {
     const { firstName, lastName, email } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
       { firstName, lastName, email },
-      { new: true, runValidators: true }
+      { new: true}
     );
 
     res.status(200).json({
@@ -123,7 +121,7 @@ export const updateProfile = async (req, res, next) => {
 };
 
 
-export const changePassword = async (req, res, next) => {
+const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -145,10 +143,19 @@ export const changePassword = async (req, res, next) => {
 };
 
 
-export const logout = (req, res) => {
+const logout = (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'Logged out successfully'
   });
 };
+
+module.exports = {
+    signup,
+    login,
+    changePassword,
+    updateProfile,
+    getUser,
+    logout
+}
 
