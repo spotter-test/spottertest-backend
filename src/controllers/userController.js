@@ -5,7 +5,7 @@ const { signupValidator, loginValidator } = require('../validators/authValidator
 
 export const signup = async (req, res, next) => {
   try {
-    // 1) Check for validation errors
+   
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -17,7 +17,6 @@ export const signup = async (req, res, next) => {
 
     const { email, password, firstName, lastName } = req.body;
 
-    // 2) Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email }]
     });
@@ -29,7 +28,6 @@ export const signup = async (req, res, next) => {
       });
     }
 
-    // 3) Create new user
     const newUser = await User.create({
       username,
       email,
@@ -38,7 +36,6 @@ export const signup = async (req, res, next) => {
       lastName
     });
 
-    // 4) Generate token and send response
     createSendToken(newUser, 201, res);
 
   } catch (error) {
@@ -64,15 +61,24 @@ export const login = async (req, res, next) => {
     // 2) Check if user exists and password is correct
     const user = await User.findOne({ email }).select('+password');
 
-    if (!user || !(await user.correctPassword(password, user.password))) {
+    if (!user) {
       return res.status(401).json({
         status: 'error',
-        message: 'Incorrect email or password'
+        message: 'user does not exist'
       });
     }
 
-    // 4) Generate token and send response
-    createSendToken(user, 200, res);
+    const match = await bcrypt.compare(candidatePassword, userPassword);
+    if(match){
+        // 4) Generate token and send response
+        createSendToken(user, 200, res);
+    } else {
+        return {
+            statusCode: 401,
+            message: 'Invalid password'
+        }
+    }
+
 
   } catch (error) {
     next(error);
