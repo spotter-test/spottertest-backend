@@ -28,9 +28,11 @@ const signup = async (req, res, next) => {
       });
     }
 
+    const hashedpassword = await bcrypt.hash(password,10)
+
     const newUser = await User.create({
       email,
-      password,
+      password: hashedpassword,
       firstName,
       lastName
     });
@@ -123,16 +125,28 @@ const updateProfile = async (req, res, next) => {
 
 const changePassword = async (req, res, next) => {
   try {
+    console.log(req.body);
     const { currentPassword, newPassword } = req.body;
 
     // 1) Get user from collection
     const user = await User.findById(req.user.id).select('+password');
 
-    const match = await bcrypt.compare(newPassword,user.password)
+    const match = await bcrypt.compare(currentPassword,user.password);
+    const passwordnotrepeat = await bcrypt.compare(newPassword,user.password);
 
-    // 3) Update password
-    user.password = newPassword;
-    await user.save();
+    if(match && passwordnotrepeat){
+        const hashedpassword = await bcrypt.hash(newPassword,10);
+    
+        // 3) Update password
+        user.password = hashedpassword;
+        await user.save();
+    } else {
+        return {
+            statusCode: 400,
+            message: "Password must be different from current password"
+        }
+    }
+
 
     // 4) Log user in, send JWT
     createSendToken(user, 200, res);
