@@ -16,7 +16,7 @@ router.post('/login', login);
 router.post('/logout',protect, logout);
 router.get('/getuser',protect, getUser);
 router.put('/update-profile',protect, updateProfile);
-router.put('/change-password',protect, changePassword); 
+router.post('/change-password',protect, changePassword); 
 
 
 module.exports = router;
