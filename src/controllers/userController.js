@@ -47,7 +47,7 @@ const signup = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    // 1) Check for validation errors
+ 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -59,7 +59,6 @@ const login = async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    // 2) Check if user exists and password is correct
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
@@ -70,8 +69,8 @@ const login = async (req, res, next) => {
     }
 
     const match = await bcrypt.compare(password,user.password);
+
     if(match){
-        // 4) Generate token and send response
         createSendToken(user, 200, res);
     } else {
         return {
@@ -125,16 +124,14 @@ const updateProfile = async (req, res, next) => {
 
 const changePassword = async (req, res, next) => {
   try {
-    console.log(req.body);
     const { currentPassword, newPassword } = req.body;
 
     // 1) Get user from collection
     const user = await User.findById(req.user.id).select('+password');
 
     const match = await bcrypt.compare(currentPassword,user.password);
-    const passwordnotrepeat = await bcrypt.compare(newPassword,user.password);
 
-    if(match && passwordnotrepeat){
+    if(match){
         const hashedpassword = await bcrypt.hash(newPassword,10);
     
         // 3) Update password
