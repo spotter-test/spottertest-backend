@@ -64,7 +64,7 @@ const login = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         status: 'error',
-        message: 'user does not exist'
+        message: 'user does not exist' 
       });
     }
 
@@ -73,10 +73,10 @@ const login = async (req, res, next) => {
     if(match){
         createSendToken(user, 200, res);
     } else {
-        return {
-            statusCode: 401,
-            message: 'Invalid password'
-        }
+        return res.status(401).json({ // Fixed: Use res.status().json()
+        status: 'error',
+        message: 'Invalid password'
+      });
     }
 
 
@@ -138,10 +138,10 @@ const changePassword = async (req, res, next) => {
         user.password = hashedpassword;
         await user.save();
     } else {
-        return {
-            statusCode: 400,
-            message: "Password must be different from current password"
-        }
+        return res.status(401).json({ 
+        status: 'error',
+        message: 'Current password is incorrect'
+      });
     }
 
 
